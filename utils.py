@@ -15,14 +15,24 @@ from six.moves import xrange
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
+#首先定义了一个pp = pprint.PrettyPrinter()，以方便打印数据结构信息
 pp = pprint.PrettyPrinter()
 
+#定义了get_stddev函数，是三个参数乘积后开平方的倒数，应该是为了随机化用。
 get_stddev = lambda x, k_h, k_w: 1/math.sqrt(k_w*k_h*x.get_shape()[-1])
 
+"""
+定义show_all_variables()函数。首先，tf.trainable_variables返回的是需要训练的变量列表；
+然后用tensorflow.contrib.slim中的model_analyzer.analyze_vars打印出所有与训练相关的变量信息。
+"""
 def show_all_variables():
   model_vars = tf.trainable_variables()
   slim.model_analyzer.analyze_vars(model_vars, print_info=True)
 
+"""
+定义get_image(image_path,input_height,input_width,resize_height=64, resize_width=64,crop=True, grayscale=False)
+函数。首先根据图像路径参数读取路径，根据灰度化参数选择是否进行灰度化。然后对图像参照输入的参数进行裁剪。
+"""
 def get_image(image_path, input_height, input_width,
               resize_height=64, resize_width=64,
               crop=True, grayscale=False):
@@ -30,19 +40,30 @@ def get_image(image_path, input_height, input_width,
   return transform(image, input_height, input_width,
                    resize_height, resize_width, crop)
 
+"""
+定义save_images(images,size,image_path)函数。调用
+imsave(inverse_transform(images), size, image_path)函数并返回新图像。
+"""
 def save_images(images, size, image_path):
   return imsave(inverse_transform(images), size, image_path)
 
+"""
+定义imread(path, grayscale = False)函数。调用cipy.misc.imread()函数，
+判断grayscale参数是否进行范围灰度化，并进行类型转换为np.float。
+"""
 def imread(path, grayscale = False):
   if (grayscale):
     return scipy.misc.imread(path, flatten = True).astype(np.float)
   else:
     # Reference: https://github.com/carpedm20/DCGAN-tensorflow/issues/162#issuecomment-315519747
-    img_bgr = cv2.imread(path)
+    img_bgr = cv2.imread(path)#OpenCV follows BGR order, while matplotlib likely follows RGB order
     # Reference: https://stackoverflow.com/a/15074748/
-    img_rgb = img_bgr[..., ::-1]
+    img_rgb = img_bgr[..., ::-1]#img2 = img[:,:,::-1] to flip the colors dimension from BGR to RGB (using only NumPy indexing)
     return img_rgb.astype(np.float)
 
+"""
+定义merge_images(images, size)函数。调用inverse_transform(images)函数，并返回新图像。
+"""
 def merge_images(images, size):
   return inverse_transform(images)
 
