@@ -1,4 +1,7 @@
-import os
+
+"""
+main.py主要是调用前面定义好的模型、图像处理方法，来进行训练测试，程序的入口
+"""import os
 import scipy.misc
 import numpy as np
 
@@ -75,6 +78,7 @@ def main(_):
   run_config = tf.ConfigProto()
   run_config.gpu_options.allow_growth=True
 
+#运行session，首先判断处理的是哪个数据集，然后对应使用不同参数的DCGAN类，这个类会在model.py文件中定义。
   with tf.Session(config=run_config) as sess:
     if FLAGS.dataset == 'mnist':
       dcgan = DCGAN(
@@ -110,8 +114,11 @@ def main(_):
           sample_dir=FLAGS.sample_dir,
           data_dir=FLAGS.data_dir)
 
+#show所有与训练相关的变量。
     show_all_variables()
 
+"""判断是训练还是测试，如果是训练，则进行训练；如果不是，判断是否有训练好的model，
+然后进行测试，如果没有先训练，则会提示“[!] Train a model first, then run test mode"""
     if FLAGS.train:
       dcgan.train(FLAGS)
     else:
@@ -126,6 +133,8 @@ def main(_):
     #                 [dcgan.h4_w, dcgan.h4_b, None])
 
     # Below is codes for visualization
+
+    """最后进行可视化，visualize(sess, dcgan, FLAGS, OPTION)。"""
     OPTION = 1
     visualize(sess, dcgan, FLAGS, OPTION)
 
