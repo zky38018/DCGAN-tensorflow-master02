@@ -1,6 +1,9 @@
 """
 Some codes from https://github.com/Newmu/dcgan_code
 """
+"""
+主要负责图像的一些基本操作，获取图像、保存图像、图像翻转，和利用moviepy模块可视化训练过程。
+"""
 from __future__ import division
 import math
 import json
@@ -62,11 +65,19 @@ def imread(path, grayscale = False):
     return img_rgb.astype(np.float)
 
 """
+用作可视化多张图片
 定义merge_images(images, size)函数。调用inverse_transform(images)函数，并返回新图像。
 """
 def merge_images(images, size):
   return inverse_transform(images)
 
+"""
+用作可视化多张图片
+定义merge(images, size)函数。首先获取image的高和宽。然后判断image是RGB图还是灰度图，
+以分别进行不同的处理。如果通道数是3或4，则对每一批次（如，batch_size=64）的所有图像，
+用0初始化一张原始图像放大8*8的图像，然后循环，依次将所有图像填入大图像，并且返回这张大图像。
+如果通道数是1，也是一样，只不过填入图像的时候只填一个通道的信息。如果不是上述两种情况，则抛出错误提示。
+"""
 def merge(images, size):
   h, w = images.shape[1], images.shape[2]
   if (images.shape[3] in (3,4)):
@@ -88,10 +99,18 @@ def merge(images, size):
     raise ValueError('in merge(images,size) images parameter '
                      'must have dimensions: HxW or HxWx3 or HxWx4')
 
+"""
+定义imsave(images, size, path)函数。首先将merge()函数返回的图像，
+用 np.squeeze()函数移除长度为1的轴。然后利用scipy.misc.imsave()函数将新图像保存到指定路径中。
+"""
 def imsave(images, size, path):
   image = np.squeeze(merge(images, size))
   return scipy.misc.imsave(path, image)
 
+"""
+定义center_crop(x, crop_h, crop_w,resize_h=64, resize_w=64)函数。
+对图像的H和W与crop的H和W相减，得到取整的值，根据这个值作为下标依据来scipy.misc.resize图像。
+"""
 def center_crop(x, crop_h, crop_w,
                 resize_h=64, resize_w=64):
   if crop_w is None:
@@ -102,6 +121,12 @@ def center_crop(x, crop_h, crop_w,
   return scipy.misc.imresize(
       x[j:j+crop_h, i:i+crop_w], [resize_h, resize_w])
 
+"""
+定义transform(image, input_height, input_width,resize_height=64, resize_width=64, crop=True)
+函数。对输入的图像进行裁剪，如果crop为true，则使用center_crop()函数，对图像的H和W与crop的H和W相减，
+得到取整的值，根据这个值作为下标依据来scipy.misc.resize图像；否则不对图像进行其他操作，
+直接scipy.misc.resize为64*64大小的图像。最后返回图像。
+"""
 def transform(image, input_height, input_width, 
               resize_height=64, resize_width=64, crop=True):
   if crop:
@@ -112,9 +137,14 @@ def transform(image, input_height, input_width,
     cropped_image = scipy.misc.imresize(image, [resize_height, resize_width])
   return np.array(cropped_image)/127.5 - 1.
 
+"""
+定义inverse_transform(images)函数。对图像进行翻转后返回新图像。
+"""
 def inverse_transform(images):
   return (images+1.)/2.
 
+"""
+定义to_json(output_path, *layers)函数。应该是获取每一层的权值、偏置值什么的"""
 def to_json(output_path, *layers):
   with open(output_path, "w") as layer_f:
     lines = ""
@@ -178,6 +208,12 @@ def to_json(output_path, *layers):
                W.shape[0], W.shape[3], biases, gamma, beta, fs)
     layer_f.write(" ".join(lines.replace("'","").split()))
 
+"""
+定义make_gif(images, fname, duration=2, true_image=False)函数。
+利用moviepy.editor模块来制作动图，为了可视化用的。函数又定义了
+一个函数make_frame(t)，首先根据图像集的长度和持续的时间做一个除法，
+然后返回每帧图像。最后视频修剪并制作成GIF动画。
+"""
 def make_gif(images, fname, duration=2, true_image=False):
   import moviepy.editor as mpy
 
@@ -195,6 +231,11 @@ def make_gif(images, fname, duration=2, true_image=False):
   clip = mpy.VideoClip(make_frame, duration=duration)
   clip.write_gif(fname, fps = len(images) / duration)
 
+"""
+定义visualize(sess, dcgan, config, option)函数。分为0、1、2、3、4种option。
+如果option=0，则之间显示生产的样本‘如果option=1，根据不同数据集不一样的处理，
+并利用前面的save_images()函数将sample保存下来；等等。本次在main.py中选用option=1。
+"""
 def visualize(sess, dcgan, config, option):
   image_frame_dim = int(math.ceil(config.batch_size**.5))
   if option == 0:
@@ -268,7 +309,9 @@ def visualize(sess, dcgan, config, option):
         for idx in range(64) + range(63, -1, -1)]
     make_gif(new_image_set, './samples/test_gif_merged.gif', duration=8)
 
-
+"""
+定义image_manifold_size(num_images)函数。首先获取图像数量的开平方后向下取整的h和向上取整的w，
+然后设置一个assert断言，如果h*w与图像数量相等，则返回h和w，否则断言错误提示。"""
 def image_manifold_size(num_images):
   manifold_h = int(np.floor(np.sqrt(num_images)))
   manifold_w = int(np.ceil(np.sqrt(num_images)))
