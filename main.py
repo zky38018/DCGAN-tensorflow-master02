@@ -1,4 +1,4 @@
-
+"""参考https://blog.csdn.net/liuxiao214/article/details/74502975"""
 """
 main.py主要是调用前面定义好的模型、图像处理方法，来进行训练测试，程序的入口
 """import os
